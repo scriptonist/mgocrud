@@ -40,7 +40,6 @@ var generateCmd = &cobra.Command{
 		if len(args) == 0 {
 			fmt.Println("No file to generate")
 		}
-		fmt.Println(args)
 		for _, file := range args {
 			generate.Generate(&generate.Opts{
 				Filename:       file,
