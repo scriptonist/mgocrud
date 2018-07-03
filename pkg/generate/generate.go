@@ -36,12 +36,10 @@ func Generate(opts *Opts) error {
 		return err
 	}
 	ast.Inspect(file, func(n ast.Node) bool {
-		s, ok := n.(*ast.StructType)
+		s, ok := n.(*ast.TypeSpec)
 		if !ok {
 			return true
 		}
-		generateCRUD(&structType{
-			node: s,
 		})
 		return true
 	})
@@ -49,11 +47,25 @@ func Generate(opts *Opts) error {
 	return nil
 }
 
+func collectStructs(node ast.Node) map[token.Pos]*structType {
+	structs := make(map[token.Pos]*structType, 0)
+	collectStructs = func(n ast.Node) bool {
+		t,ok := n.(*ast.TypeSpec)
+		if !ok {
+			return true
+		}
+		if t.Type == nil{
+			return true
+		}
+	}
+}
+
 // ProcessStruct processes a struct to generate the CRUD function for the given struct
 func generateCRUD(s *structType) (string, error) {
 	collectionName := s.name
 	// A Map containing the key and type of the key
 	documentKeys := make(map[string]string)
+
 	// Extract fields and extract bson tags
 	for _, field := range s.node.Fields.List {
 		if field.Tag != nil {
