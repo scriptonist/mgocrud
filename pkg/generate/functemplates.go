@@ -14,8 +14,8 @@ func init() {
 	}
 }
 
-const createFuncTemplate = `func ({{ printf "%.1s" .StructName | toLower }}  *{{.StrucName}}) Create(s *mgo.Session,database,collection string) error{
-	err := s.DB(database).C(collection).Insert({{ printf "%.1s" .StructName | toLower }})
+const createFuncTemplate = `func ({{ printf "%.1s" .Name | toLower }}  *{{.Name}}) Create(s *mgo.Session,database,collection string) error{
+	err := s.DB(database).C(collection).Insert({{ printf "%.1s" .Name | toLower }})
 	if err != nil{
 		return err
 	}
@@ -23,7 +23,7 @@ const createFuncTemplate = `func ({{ printf "%.1s" .StructName | toLower }}  *{{
 }
 `
 
-func generateCreateMethod(s *structType, f io.ReadWriter) error {
+func generateCreateFunc(s *structType, f io.Writer) error {
 	tmpl, err := template.New("createMethod").Funcs(funcMaps).Parse(createFuncTemplate)
 	if err != nil {
 		return err

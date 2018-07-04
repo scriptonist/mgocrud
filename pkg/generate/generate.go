@@ -4,11 +4,11 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"io"
 	"io/ioutil"
 	"log"
-	"strings"
-
-	"github.com/fatih/structtag"
+	"os"
+	"path/filepath"
 )
 
 // Opts specifies the options that generate accepts
@@ -19,8 +19,9 @@ type Opts struct {
 
 // StructType encompasses a go struct's name and it's corresponding node
 type structType struct {
-	name string
-	node *ast.StructType
+	PackageName string
+	Name        string
+	Node        *ast.StructType
 }
 
 // Generate CRUD function for the file given
@@ -29,61 +30,62 @@ func Generate(opts *Opts) error {
 	if err != nil {
 		return err
 	}
+	var workingDir = filepath.Dir(opts.Filename)
 
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, opts.Filename, b, parser.ParseComments)
 	if err != nil {
 		return err
 	}
-	ast.Inspect(file, func(n ast.Node) bool {
-		s, ok := n.(*ast.TypeSpec)
-		if !ok {
-			return true
+
+	structs := collectStructs(file)
+	for _, val := range structs {
+		outfile, err := os.OpenFile(filepath.Join(workingDir, val.Name+"CRUD.go"), os.O_WRONLY|os.O_CREATE, 0666)
+		if err != nil {
+			log.Println(err)
+			return err
 		}
-		})
-		return true
-	})
+
+		generateCRUD(val, outfile)
+		outfile.Close()
+	}
 
 	return nil
 }
 
 func collectStructs(node ast.Node) map[token.Pos]*structType {
 	structs := make(map[token.Pos]*structType, 0)
-	collectStructs = func(n ast.Node) bool {
-		t,ok := n.(*ast.TypeSpec)
-		if !ok {
+	var structName string
+	var packagename string
+	collectStructs := func(n ast.Node) bool {
+		switch ntype := n.(type) {
+		case *ast.Package:
+			packagename = ntype.Name
+		case *ast.TypeSpec:
+			structName = ntype.Name.Name
+			s, ok := ntype.Type.(*ast.StructType)
+			if !ok {
+				return true
+			}
+			structs[s.Pos()] = &structType{
+				Name:        structName,
+				Node:        s,
+				PackageName: packagename,
+			}
+		default:
 			return true
 		}
-		if t.Type == nil{
-			return true
-		}
+		return true
 	}
+	ast.Inspect(node, collectStructs)
+	return structs
 }
 
 // ProcessStruct processes a struct to generate the CRUD function for the given struct
-func generateCRUD(s *structType) (string, error) {
-	collectionName := s.name
-	// A Map containing the key and type of the key
-	documentKeys := make(map[string]string)
-
-	// Extract fields and extract bson tags
-	for _, field := range s.node.Fields.List {
-		if field.Tag != nil {
-			// Remove backticks at two ends
-			ns := strings.TrimPrefix(strings.TrimSuffix(field.Tag.Value, "`"), "`")
-
-			tags, err := structtag.Parse(ns)
-			if err != nil {
-				panic(err)
-			}
-			bsontag, err := tags.Get("bson")
-			if err != nil {
-				log.Println(err)
-			} else {
-
-			}
-
-		}
+func generateCRUD(s *structType, w io.Writer) (string, error) {
+	err := generateCreateFunc(s, w)
+	if err != nil {
+		log.Println(err)
 	}
 	return "", nil
 }
