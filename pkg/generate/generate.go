@@ -1,7 +1,9 @@
 package generate
 
 import (
+	"bytes"
 	"go/ast"
+	"go/format"
 	"go/parser"
 	"go/token"
 	"io"
@@ -30,24 +32,41 @@ func Generate(opts *Opts) error {
 	if err != nil {
 		return err
 	}
-	var workingDir = filepath.Dir(opts.Filename)
+	// var workingDir = filepath.Dir(opts.Filename)
+	absPath, err := filepath.Abs(opts.Filename)
+	if err != nil {
+		return err
+	}
 
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, opts.Filename, b, parser.ParseComments)
 	if err != nil {
 		return err
 	}
-
+	// ast.Print(fset, file)
 	structs := collectStructs(file)
 	for _, val := range structs {
-		outfile, err := os.OpenFile(filepath.Join(workingDir, val.Name+"CRUD.go"), os.O_WRONLY|os.O_CREATE, 0666)
+		var buf bytes.Buffer
+		generateCRUD(val, &buf)
+		formatedContent, err := format.Source(buf.Bytes())
 		if err != nil {
-			log.Println(err)
+			return err
+		}
+		f, err := os.OpenFile(absPath, os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
 			return err
 		}
 
-		generateCRUD(val, outfile)
-		outfile.Close()
+		_, err = f.Write(formatedContent)
+		if err != nil {
+			return err
+		}
+
+		// err = ioutil.WriteFile(filepath.Join(workingDir, val.Name+"CRUD.go"), formatedContent, 0666)
+		// if err != nil {
+		// 	log.Println(err)
+		// 	return err
+		// }
 	}
 
 	return nil
@@ -59,8 +78,9 @@ func collectStructs(node ast.Node) map[token.Pos]*structType {
 	var packagename string
 	collectStructs := func(n ast.Node) bool {
 		switch ntype := n.(type) {
-		case *ast.Package:
-			packagename = ntype.Name
+		case *ast.File:
+			packagename = ntype.Name.Name
+			return true
 		case *ast.TypeSpec:
 			structName = ntype.Name.Name
 			s, ok := ntype.Type.(*ast.StructType)
@@ -73,6 +93,7 @@ func collectStructs(node ast.Node) map[token.Pos]*structType {
 				PackageName: packagename,
 			}
 		default:
+			// fmt.Printf("%T\n", ntype)
 			return true
 		}
 		return true
@@ -82,8 +103,14 @@ func collectStructs(node ast.Node) map[token.Pos]*structType {
 }
 
 // ProcessStruct processes a struct to generate the CRUD function for the given struct
-func generateCRUD(s *structType, w io.Writer) (string, error) {
-	err := generateCreateFunc(s, w)
+func generateCRUD(s *structType, w io.ReadWriter) (string, error) {
+	// err := generateFileStub(s, w)
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return "", err
+	// }
+
+	err := generateFuncs(s, w)
 	if err != nil {
 		log.Println(err)
 	}
