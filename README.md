@@ -59,7 +59,7 @@ func (u *User) Delete(mgosession *mgo.Session, database, collection string, sele
 }
 
 ```
-`mgocrud` expects `github.com/globalsign/mgo` & `github.com/globalsign/bson` to be used as the drver for connecting to `mongo`.
+`mgocrud` expects `github.com/globalsign/mgo` & `github.com/globalsign/bson` to be used as the driver for connecting to `mongo`.
 # Okay, How can I try It ?
 
 `go get github.com/scriptonist/mgocrud`
