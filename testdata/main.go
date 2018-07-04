@@ -34,7 +34,6 @@ type User struct {
 	ID   bson.ObjectId `bson:"_id,omitempty"`
 	Name string        `bson:"name"`
 }
-
 func (u *User) Create(mgosession *mgo.Session, database, collection string) error {
 	err := mgosession.DB(database).C(collection).Insert(u)
 	if err != nil {
