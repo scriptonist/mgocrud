@@ -5,4 +5,4 @@ generate mongo CRUD methods from  a golang struct
 
 # How to install 
 
-`go get -u github.com/scriptonist/mgocrud`
+`go get github.com/scriptonist/mgocrud`
