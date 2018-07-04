@@ -1,4 +1,4 @@
-# Mgocrud 
+# `MgoCRUD`
 generate mongo CRUD methods from  a golang struct
 
 ![Demo](https://raw.githubusercontent.com/scriptonist/mgocrud/master/artifacts/demo-mgocrud.gif)
@@ -7,7 +7,7 @@ generate mongo CRUD methods from  a golang struct
 `mgocrud` is a cli tool which can generate basic CRUD functions from a `golang` struct
 #### Example
 
-let the following be contents of `main.go`
+Following are contents of `main.go`
 
 ```
 package main
@@ -59,7 +59,7 @@ func (u *User) Delete(mgosession *mgo.Session, database, collection string, sele
 }
 
 ```
-
+`mgocrud` expects `github.com/globalsign/mgo` & `github.com/globalsign/bson` to be used as the drver for connecting to `mongo`.
 # Okay, How can I try It ?
 
 `go get github.com/scriptonist/mgocrud`
