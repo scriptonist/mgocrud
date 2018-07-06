@@ -18,7 +18,7 @@ type User struct {
 }
 
 ```
-Now on running `mgocrud generate main.go`, the file be appended with CRUD functions for the `User` struct.
+Now on running `mgocrud generate main.go`, the file will be appended with CRUD functions for the `User` struct.
 
 ```
 package main
